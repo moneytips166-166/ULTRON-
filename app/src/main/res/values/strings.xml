@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">ULTRON</string>
+    <string name="app_tagline">Gesture Intelligence</string>
+    <string name="permission_camera_title">Camera Access Required</string>
+    <string name="permission_camera_desc">ULTRON needs camera access to track hand gestures (open palm expansion, fist contraction, and 3D positioning).</string>
+    <string name="permission_mic_title">Microphone Access Required</string>
+    <string name="permission_mic_desc">ULTRON uses voice commands for hands-free color shifts, morphing, and voice AI conversations.</string>
+</resources>

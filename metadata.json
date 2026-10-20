@@ -1,0 +1,11 @@
+{
+  "name": "ULTRON",
+  "description": "3D Gesture Energy Core and Multi-Provider Voice AI with real-time hand tracking, volumetric particle physics, and cinematic voice controls.",
+  "requestFramePermissions": [
+    "android.permission.CAMERA",
+    "android.permission.RECORD_AUDIO"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

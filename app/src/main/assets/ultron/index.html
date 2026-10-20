@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#030712">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ULTRON // Gesture Intelligence</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Three.js Offline Core -->
+  <script src="libs/three.min.js"></script>
+  <!-- MediaPipe Vision Hand Tracking Scripts -->
+  <script src="libs/camera_utils.js"></script>
+  <script src="libs/hands.js"></script>
+</head>
+<body>
+  <!-- 3D WebGL Viewport -->
+  <div id="canvas-container"></div>
+
+  <!-- HUD Interface Layer -->
+  <div id="hud-overlay">
+    <!-- TOP BAR -->
+    <header class="top-bar">
+      <div class="brand-section">
+        <svg class="brand-logo" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="#00F5FF" stroke-width="2"/>
+          <circle cx="12" cy="12" r="4" fill="#8B5CF6"/>
+          <path d="M12 2V6M12 18V22M2 12H6M18 12H22" stroke="#00F5FF" stroke-width="1.5"/>
+        </svg>
+        <div>
+          <h1 class="brand-title">ULTRON</h1>
+          <div class="brand-tagline">Gesture Intelligence</div>
+        </div>
+      </div>
+
+      <!-- MODE SWITCHER -->
+      <div class="mode-switcher">
+        <button id="btn-mode-normal" class="mode-btn active">NORMAL</button>
+        <button id="btn-mode-hand" class="mode-btn">GESTURE</button>
+      </div>
+
+      <!-- TOP ACTION ICONS -->
+      <div class="top-actions">
+        <button id="btn-pip-toggle" class="icon-btn" title="Toggle Camera PIP" aria-label="Camera PIP">
+          <svg viewBox="0 0 24 24"><path d="M19 7h-8v6h8V7zm2-4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>
+        </button>
+        <button id="btn-diag-toggle" class="icon-btn" title="Diagnostics" aria-label="Diagnostics">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-4.5-4.5 1.4-1.4 3.1 3.1 6.1-6.1 1.4 1.4L12 17z"/></svg>
+        </button>
+        <button id="btn-chat-toggle" class="icon-btn" title="AI Assistant Chat" aria-label="AI Chat">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+        </button>
+        <button id="btn-settings-toggle" class="icon-btn" title="System Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- TOAST / TRANSCRIPT PILL -->
+    <div id="transcript-pill" class="transcript-pill">
+      <span id="transcript-text">Ultron Systems Nominal</span>
+    </div>
+
+    <!-- SHAPE SELECTOR (LEFT DOCK) -->
+    <nav class="left-dock" id="shape-buttons" aria-label="Shape Presets"></nav>
+
+    <!-- BOTTOM CONTROLS -->
+    <footer class="bottom-bar">
+      <!-- HAND TELEMETRY & OPENNESS GAUGE -->
+      <div id="hand-telemetry" class="hand-telemetry">
+        <div class="telemetry-header">
+          <span>GESTURE EXTENSION</span>
+          <span id="gesture-badge" class="gesture-badge neutral">NEUTRAL</span>
+        </div>
+        <div class="progress-track">
+          <div id="openness-progress" class="progress-fill"></div>
+        </div>
+        <!-- Virtual Gesture Slider for Testing / Simulation Fallback -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+          <span style="font-size:9px; color:var(--text-dim);">SIMULATE:</span>
+          <input type="range" id="sim-openness-slider" min="0" max="1" step="0.01" value="0.5" style="width:75%; accent-color:var(--cyan-core);">
+        </div>
+      </div>
+
+      <!-- COLOR CHIPS SCROLL -->
+      <div class="color-chips-scroll" id="color-chips" aria-label="Color Palette"></div>
+
+      <!-- MAIN PUSH-TO-TALK MIC BUTTON -->
+      <button id="btn-mic" class="btn-mic-main" title="Voice Command / Push to Talk" aria-label="Push to Talk">
+        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+      </button>
+    </footer>
+  </div>
+
+  <!-- CAMERA PIP WINDOW -->
+  <aside id="camera-pip" class="camera-pip">
+    <video id="camera-video" playsinline muted autoplay></video>
+    <canvas id="camera-preview" width="320" height="240"></canvas>
+  </aside>
+
+  <!-- DIAGNOSTICS HUD PANEL -->
+  <section id="diag-panel" class="diag-panel" aria-label="System Diagnostics">
+    <div class="diag-row"><span>RENDER:</span><span id="diag-fps" class="diag-val">60</span> fps</div>
+    <div class="diag-row"><span>FRAME:</span><span id="diag-ms" class="diag-val">16.6ms</span></div>
+    <div class="diag-row"><span>PARTICLES:</span><span id="diag-particles" class="diag-val">12,000</span></div>
+    <div class="diag-row"><span>VISION:</span><span id="diag-vision-fps" class="diag-val">0 fps</span></div>
+    <div class="diag-row"><span>STATE:</span><span id="diag-gesture" class="diag-val">None</span></div>
+    <div class="diag-row"><span>COORD:</span><span id="diag-coords" class="diag-val">X:0 Y:0 Z:0</span></div>
+  </section>
+
+  <!-- AI CHAT DRAWER -->
+  <section id="chat-drawer" class="drawer" aria-label="AI Intelligence Chat">
+    <header class="drawer-header">
+      <div class="drawer-title">
+        <svg style="width:18px; height:18px; fill:var(--cyan-core);" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+        ULTRON INTELLIGENCE
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button id="btn-chat-voice-toggle" class="icon-btn active" title="Toggle Spoken Responses" style="width:36px; height:36px;">
+          <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+        </button>
+        <button id="btn-chat-clear" class="icon-btn" title="Clear Chat History" style="width:36px; height:36px;">
+          <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+        <button class="drawer-close" onclick="document.getElementById('chat-drawer').classList.remove('active')" aria-label="Close">
+          <svg style="width:20px; height:20px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="drawer-body">
+      <div id="chat-messages" class="chat-messages">
+        <div class="chat-msg assistant">
+          <span class="msg-sender">ULTRON</span>
+          <div class="msg-body">Ultron neural intelligence active. You can speak commands, query tactical analysis, or adjust energy sphere parameters.</div>
+        </div>
+      </div>
+
+      <div id="chat-loading" class="chat-loading">
+        <svg style="width:16px; height:16px; animation:spin 1s linear infinite; fill:currentColor;" viewBox="0 0 24 24"><path d="M12 4V2C6.48 2 2 6.48 2 12h2c0-4.41 3.59-8 8-8z"/></svg>
+        SYNTHESIZING NEURAL RESPONSE...
+      </div>
+
+      <div class="chat-input-bar">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Type prompt or voice command..." autocomplete="off">
+        <button id="btn-chat-send" class="icon-btn" style="border-radius:12px; width:44px; height:44px;" aria-label="Send">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SYSTEM SETTINGS DRAWER -->
+  <section id="settings-drawer" class="drawer" aria-label="System Settings">
+    <header class="drawer-header">
+      <div class="drawer-title">
+        <svg style="width:18px; height:18px; fill:var(--cyan-core);" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        SYSTEM CONFIGURATION
+      </div>
+      <button class="drawer-close" onclick="document.getElementById('settings-drawer').classList.remove('active')" aria-label="Close">
+        <svg style="width:20px; height:20px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </header>
+
+    <div class="drawer-body">
+      <!-- AI PROVIDER SETTINGS -->
+      <div class="settings-group">
+        <label class="settings-label" for="provider-select">AI Provider</label>
+        <select id="provider-select" class="settings-select"></select>
+      </div>
+
+      <div class="settings-group">
+        <label class="settings-label" for="model-input">Model ID</label>
+        <input type="text" id="model-input" class="settings-input" placeholder="e.g. gemini-2.5-flash">
+      </div>
+
+      <div class="settings-group">
+        <label class="settings-label" for="api-key-input">API Key</label>
+        <input type="password" id="api-key-input" class="settings-input" placeholder="Enter API key...">
+      </div>
+
+      <div class="settings-group" style="display:none;">
+        <label class="settings-label" for="custom-endpoint-input">Custom Base URL</label>
+        <input type="text" id="custom-endpoint-input" class="settings-input" placeholder="https://api.example.com/v1">
+      </div>
+
+      <button id="btn-test-connection" class="test-btn">TEST PROVIDER CONNECTION</button>
+      <div id="test-status" class="test-status"></div>
+
+      <!-- PARTICLE QUALITY PRESETS -->
+      <div class="settings-group" style="margin-top:12px;">
+        <label class="settings-label">Particle Density Presets</label>
+        <div id="quality-presets" class="quality-presets-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main JavaScript ES Module Entrypoint -->
+  <script type="module" src="js/app.js"></script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.log('[SW] Registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
